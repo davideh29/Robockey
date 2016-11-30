@@ -20,5 +20,5 @@ typedef struct {
 
 // method for updating Robot data based on measurement
 void interpret(Robot* robot, unsigned int* measurement);
- 
+
 #endif

@@ -1,4 +1,6 @@
 #include "m_general.h"
+#include "robockey_robot.h"
+#define PI 3.14159
 
 void motor_init() {
 	// Digital output pins
@@ -41,17 +43,24 @@ void motor_init() {
 	set(DDRB, 5);
 }
 
+void motor_stop() {
+	clear(PORTB, 1);
+	clear(PORTB, 2);
+	clear(PORTB, 3);
+	clear(PORTB, 7);
+}
+
 void turn_in_place(bool right) {
 	if (right) {
-		OCR1A = 0x00;
-		OCR1B = 0x00;
+		OCR1A = 0xBF;
+		OCR1B = 0xBF;
 		set(PORTB, 1);
 		clear(PORTB, 2);
 		clear(PORTB, 3);
 		set(PORTB, 7);
 		} else {
-		OCR1A = 0x00;
-		OCR1B = 0x00;
+		OCR1A = 0xBF;
+		OCR1B = 0xBF;
 		clear(PORTB, 1);
 		set(PORTB, 2);
 		set(PORTB, 3);
@@ -77,8 +86,17 @@ void turn(int direction) {
 	}
 }
 
-//void turn_to_goal(Robot* robot) {
-	// Get robot location
-	// Use location of front star to determine actual angle
-	// Angle needed to keep angle of orientation consistent between trials
-//}
+// Turn to face opponent's goal
+bool turn_to_goal(Robot* robot, bool right, float opponent_x, float opponent_y) {
+	// Get opponent goal coordinates
+	// Determine angle needed to face opponent goal
+	float theta;
+	if (right) {
+		theta = 90.0 + atan((robot->y - opponent_x) / (robot->x - opponent_y));
+	} else {
+		
+	}
+	return ((robot->o * 180.0 / PI) < theta + 10.0 && (robot->o * 180.0 / PI) > theta - 10.0);
+}
+
+void drive_to_goal();
