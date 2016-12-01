@@ -7,8 +7,16 @@
 // Defines the maximum ADC difference allowed between the front two while still being considered "forwards"
 #define DIFFERENCE_LIM 50
 
+bool jtag_enabled = true;
+
 // Read in ADC values from pins F0, F1, F4, F5 & F6
 void readPhototransistors(int input[]) {
+	
+	// disable JTAG if not disabled already, so we can use F4-7
+	if(jtag_enabled){
+		m_disableJTAG();
+		jtag_enabled = false;
+	}
 	
 	////// Analog to Digital Input Conversion //////
 	// Set reference voltage to VCC
@@ -88,10 +96,14 @@ void readPhototransistors(int input[]) {
 }
 
 // Returns the direction of the puck (-1, 0, 1)
+	// -1 means rotate negatively to face the puck,
+	// 0 means the puck is ahead, no need to rotate,
+	// 1 means rotate positivesly to face the puck
 int isInFront(int input[]) {
 	// Get index of max reading
 	int max_index = 0;
-	for (int i = 1; i < 5; i++) {
+	int i;
+	for (i = 1; i < 5; i++) {
 		if (input[i] > input[max_index]) {
 			max_index = i;
 		}
@@ -120,6 +132,8 @@ int isInFront(int input[]) {
 			return -1;
 		}
 	}
+	
+	return 0;
 }
 
 // Uses motor controls and isInFront to turn to face the puck
