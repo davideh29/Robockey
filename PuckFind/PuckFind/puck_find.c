@@ -237,7 +237,7 @@ bool has_puck(int pt_data[]){
 	}
 	
 	// if the front intensity is great enough, puck is in possession
-	if( front > PUCK_POSSESSION_THRESHOLD*NUM_PTS ){
+	if( front > PUCK_POSSESSION_THRESHOLD*num_front_pts ){
 		return true;
 	}
 	
