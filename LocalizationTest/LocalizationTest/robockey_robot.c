@@ -17,153 +17,74 @@ Step 7: Calculate rotation angle using inverse trig.
 */
 
 #include "robockey_robot.h"
-#include "m_usb.h"
-#define PI 3.14159265359
-#define ANGLE_OFFSET 3.64
 
-// Prints mWii data 
-void print_data(float* mx, float* my, float ox, float oy, Robot* robot) {
-	float opponent_x = -67.0, opponent_y = 248.0;
-	// Print four points
-	m_usb_tx_string(" --- ");
-	for (int i = 0; i < 4; i++) {
-		m_usb_tx_string("( ");
-		m_usb_tx_int((int) mx[i]);
-		m_usb_tx_string(", ");
-		m_usb_tx_int((int) my[i]);
-		m_usb_tx_string(" )");
-		m_usb_tx_string("   ---   ");
-	}
-	// Print calculated translation and rotation
-	m_usb_tx_char(13);
-	m_usb_tx_string("   ---   Translation: ");
-	m_usb_tx_string("( ");
-	m_usb_tx_int((int) ox);
-	m_usb_tx_string(", ");
-	m_usb_tx_int((int) oy);
-	m_usb_tx_string(" )");
-	m_usb_tx_string("   ---   New frame: ");
-	m_usb_tx_string("( ");
-	m_usb_tx_int((int) robot->x);
-	m_usb_tx_string(", ");
-	m_usb_tx_int((int) robot->y);
-	m_usb_tx_string(" )");
-	m_usb_tx_string("   ---   Theta: ");
-	m_usb_tx_int((int) (robot->o * 100.0));	// print angle in degrees
-	m_usb_tx_string("   ---   Rho: ");
-	m_usb_tx_int((int) (100.0 * (atan2f(robot->y - opponent_y, robot->x - opponent_x) + PI)));
-	m_usb_tx_char(13);
-	m_usb_tx_char(13);
-}
+#define RINK_SCALE 37.4358	// after measurement is scaled down to unit size by dividing out centroid
+								// size, multiply by RINK_SCALE to change to cm for comparing to rink
+
+int const RINK_SIZE[2] = {230, 120};	// cm
+float const CENTERED_STARS[4][2] = {{-0.2730, 11.6940}, {-0.2730, -17.3060}, {-10.8360, -0.3230}, {11.3820, 5.9350}}; // cm
+float const STAR_TRANSLATION[2] = {0.2730, 2.8060};	// cm
+
 
 /* Interpret the measurement vector returned by mWii and update Robot struct data */
-void interpret(Robot* robot, unsigned int* measurement){
-	// Star coordinates centered around the origin in order of distance from origin
-	float const CENTERED_STARS[4][2] = {{-0.2730, -17.3060}, {11.3820, 5.9350}, {-0.2730, 11.6940}, {-10.8360, -0.3230}}; // cm
-
-	// Extract x and y data from measurement
-	float mWii_x[] = { (float) measurement[0], (float) measurement[3], (float) measurement[6], (float) measurement[9] };
-	float mWii_y[] = { (float) measurement[1], (float) measurement[4], (float) measurement[7], (float) measurement[10] };
-
+void interpret(Robot* robot, unsigned int measurement[]){
+	// extract x and y data from measurement
+	float mx[] = { measurement[0], measurement[3], measurement[6], measurement[9] };
+	float my[] = { measurement[1], measurement[4], measurement[7], measurement[10] };
 	
-	////////// Determine translation to origin //////////
-	float translation_x = 0, translation_y = 0;
-	for (int i = 0; i < 4; i++) {
-		translation_x += mWii_x[i] - 512.0;
-		translation_y += mWii_y[i] - 384.0;
-	}
-	translation_x /= 4.0;
-	translation_y /= 4.0;
-
-	////////// Find mWii and star scale //////////
-	float mWii_scale = 0.0, star_scale = 0.0;
-
-	for (int i = 0; i < 4; i++) {
-		mWii_scale += powf(mWii_x[i] - translation_x, 2.0) + powf(mWii_y[i] - translation_y, 2.0);
-		star_scale += powf(CENTERED_STARS[i][0], 2.0) + powf(CENTERED_STARS[i][1], 2.0);
-	}
-	
-	mWii_scale = powf(mWii_scale / 4.0, 0.5);
-	star_scale = powf(star_scale / 4.0, 0.5);
-
-	// Scale points to uniform scale (0 to 1)
-	float sx[4], sy[4];
-	float mx[4], my[4];
-	for (int i = 0; i < 4; i++) {
-		mx[i] = (mWii_x[i] - translation_x) / mWii_scale;
-		my[i] = (mWii_y[i] - translation_y) / mWii_scale;
-		sx[i] = CENTERED_STARS[i][0] / star_scale;
-		sy[i] = CENTERED_STARS[i][1] / star_scale;
+ /* FIND LOCATION (x,y) */
+	// find centroid
+	int i;
+	float centroid[2] = {0, 0};
+	for(i=0; i<4; i++){
+		centroid[0] += mx[i]/4.0;	// in pixels
+		centroid[1] += my[i]/4.0;	// in pixels
 	}
 
+	// find scale to get to unit size
+	//	scale = centroid size (sqrt of sum of distances^2 of points from centroid)
+	float measurement_scale = 0;
+	for(i=0;i<4;i++){
+		measurement_scale += pow(mx[i]-centroid[0],2) + pow(my[i]-centroid[1],2);
+	}
+	measurement_scale = pow(measurement_scale, 0.5);	// divide measurement by this to get unit size
 	
-	////////// Sort mWii point indices based on distance from origin //////////
-	float rd[4];
-	int indices[4] = {0, 1, 2, 3};
-
-	// Get distances
-	for (int i = 0; i < 4; i++) {
-		rd[i] = powf(powf(mx[i], 2.0) + powf(my[i], 2.0), 0.5);
+	// convert centroids to cm
+	centroid[0] *= RINK_SCALE/measurement_scale;	// now in cm
+	centroid[1] *= RINK_SCALE/measurement_scale;
+	
+	// centroid position = robot position
+	robot->x = centroid[0];
+	robot->y = centroid[1];
+	
+	
+ /* FIND ROTATION ANGLE */ 
+	// center and scale star points
+	for(i=0;i<4;i++){
+		mx[i] *= RINK_SCALE/measurement_scale;
+		my[i] *= RINK_SCALE/measurement_scale;
+		mx[i] -= centroid[0];
+		my[i] -= centroid[1];
 	}
 	
-	// Sort indices
-	for (int i = 0; i < 3; i++) {
-		int max = i;
-		for (int j = i; j < 4; j++) {
-			if (rd[j] > rd[max]) {
-				max = j;
-			}
-		}
-		// Swap array[i] and array[min]
-		if (i != max) {
-			// Update array order
-			float temp = rd[i];
-			rd[i] = rd[max];
-			rd[max] = temp;
-			// Update index order
-			int tempIndex = indices[i];
-			indices[i] = indices[max];
-			indices[max] = tempIndex;
-		}
-	}
-	
-
-	////////// Determine mWii rotation //////////
+	// angle = acot( sum(v*x - u*y) / sum(u*x + v*y) )
+	//	where (x,y) = centered, scaled measurement points
+	//	and (u,v) = centered star points
 	float num = 0;
 	float den = 0;
-	for (int i = 0; i < 4; i++) {
-		num += sx[i]*my[indices[i]] - sy[i]*mx[indices[i]];
-		den += sx[i]*mx[indices[i]] + sy[i]*my[indices[i]];
+	for(i=0; i<4; i++){
+		num += CENTERED_STARS[i][1]*mx[i] - CENTERED_STARS[i][0]*my[i];
+		den += CENTERED_STARS[i][0]*mx[i] - CENTERED_STARS[i][1]*my[i];
 	}
-
-	// Update robot orientation and account for angle offset
-	robot->o = atan2(num, den) + PI - ANGLE_OFFSET; // Updated angle in radians
-	if (robot->o < 0) robot->o += 2.0 * PI;
-
-
-	////////// Use rotation to translate points into new xy frame //////////
-	// Rotate original mWii points around the origin
-	float s = sinf(2*PI-robot->o);
-	float c = cosf(2*PI-robot->o);
-
-	float ox = translation_x;
-	float oy = translation_y;
-
-	// Rotate points around origin into new xy frame
-	//for (int i = 0; i < 4; i++) {
-		translation_x = ox * c - oy * s;
-		translation_y = oy * c + ox * s;
-	//}
-
-	// Set robot x and y locations in pixels
-	robot->x = translation_x;
-	robot->y = translation_y;
-
-	// Print data
-	print_data(mWii_x, mWii_y, ox, oy, robot);
+	// update angle
+	robot->o = atan(den/num);
 }
 
-// Scale
-// Sorting
+
+
+
+
+
+
 		
 		
