@@ -131,11 +131,12 @@ void read_pts(int pt_data[]) {
 	// initialize
 	ADC_init(NUM_PTS);
 
-
+	
+	int adc_nums[] = {0, 1, 4, 5, 6, 7, 8, 9, 10};
 	// read
 	int i;
 	for(i=0; i<NUM_PTS; i++){
-		setMUX(i);
+		setMUX(adc_nums[i]);
 		pt_data[i] = readADC(); 
 		m_wait(1);
 	}
