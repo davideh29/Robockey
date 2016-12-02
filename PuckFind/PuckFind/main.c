@@ -1,17 +1,12 @@
 /*
  * Robockey.c
  *
- * Created: 11/12/2016 5:56:10 PM
- * Author : PAZ0
+ * Team DAYS (13)
  */ 
 
-#include <avr/io.h>
-#include "m_general.h"
-#include "m_usb.h"
-#include "puck_find.h"
+ #include "robockey.h"
 
-int main(void)
-{
+int main(void){
 	// System prescaler
 	m_clockdivide(3);
 	// Initialize usb
@@ -19,20 +14,24 @@ int main(void)
 	// Initialize motor
 	motor_init();
 	// Array for phototransistor readings
-	int input[5];
+	int pt_data[NUM_PTS];
+	
+	
 	// Find puck direction and turn to face it
 	while (1) {
-		readPhototransistors(input); // Get ADC phototransistor inputs
-		printADC(input); // Print ADC values
+		read_pts(pt_data); // Get ADC phototransistor pt_datas
+		printADC(pt_data); // Print ADC values to usb
 		// If facing puck, turn on green light
-		if (isInFront(input) == 0) {
+		if (get_turn(pt_data) == 0) {
 			motor_stop();
 			m_green(ON);
 		} else {
-			turnToPuck(input); // Turn to face puck
+			turn_to_puck(pt_data); // Turn to face puck
 		}
 		m_wait(500);
 	}
+	
+	return 0;
 }
 
 
