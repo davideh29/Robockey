@@ -2,7 +2,6 @@
 #include "robockey_robot.h"
 #define PI 3.14159
 
-// Initialize motor
 void motor_init() {
 	// Digital output pins
 	set(DDRB, 1); // A-IN 1
@@ -44,7 +43,6 @@ void motor_init() {
 	set(DDRB, 5);
 }
 
-// Stop motor
 void motor_stop() {
 	clear(PORTB, 1);
 	clear(PORTB, 2);
@@ -52,7 +50,6 @@ void motor_stop() {
 	clear(PORTB, 7);
 }
 
-// Turn in place - right if true or left if false
 void turn_in_place(bool right) {
 	if (right) {
 		OCR1A = 0xBF;
@@ -72,7 +69,6 @@ void turn_in_place(bool right) {
 }
 
 // -50 to -1 left, 0 forward, 1 to 50 right
-// Absolute value of input determines how "sharp" the turn is
 void turn(int direction) {
 	clear(PORTB, 1);
 	set(PORTB, 2);

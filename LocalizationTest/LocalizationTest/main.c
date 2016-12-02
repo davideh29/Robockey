@@ -1,37 +1,54 @@
 /*
- * Robockey.c
+ * LocalizationTest.c
  *
- * Team DAYS (13)
+ * Created: 11/18/2016 5:17:08 PM
+ * Author : PAZ0
  */ 
 
- #include "robockey.h"
+#include <avr/io.h>
+#include "m_general.h"
+#include "m_wii.h"
+#include "m_usb.h"
+#include "motor_control.h"
+#include "robockey_robot.h"
+#define PI 3.14159
 
-int main(void){
-	// System prescaler
+int main(void) {
+	// Wait to avoid covering mWii w/finger
+	m_wait(1000);
 	m_clockdivide(3);
-	// Initialize usb
-	m_usb_init();
 	// Initialize motor
 	motor_init();
-	// Array for phototransistor readings
-	int pt_data[NUM_PTS];
-	
-	
-	// Find puck direction and turn to face it
-	while (1) {
-		read_pts(pt_data); // Get ADC phototransistor pt_datas
-		printADC(pt_data); // Print ADC values to usb
-		// If facing puck, turn on green light
-		if (get_turn(pt_data) == 0) {
-			motor_stop();
-			m_green(ON);
-		} else {
-			turn_to_puck(pt_data); // Turn to face puck
-		}
-		m_wait(500);
+	// Get mwii readings
+	char wiiOpen = m_wii_open();
+	if (wiiOpen) {
+		m_green(ON);
+	} else {
+		m_red(ON);
 	}
-	
-	return 0;
+	unsigned int starArray[12];
+	Robot testBot;
+	m_usb_init();
+	turn_in_place(true);
+	float opponent_x = 42, opponent_y = 317;
+	while (1) {
+		m_wait(100);
+		// Get mWii array
+		if (!m_wii_read(starArray)) m_red(ON);
+		// Get robot location and orientation
+		interpret(&testBot, starArray);
+		// Wait
+		if (facing_goal(&testBot, opponent_x, opponent_y)) {
+			turn(0);
+			while (abs(opponent_y - testBot.y) > 15 || abs(opponent_x - testBot.x) > 30) {
+				m_wait(100);
+				if (!m_wii_read(starArray)) m_red(ON);
+				interpret(&testBot, starArray);
+			}
+			motor_stop();
+			m_red(ON);
+			while(1);
+		}
+	}
 }
-
 

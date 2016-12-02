@@ -12,6 +12,6 @@ void turn_in_place(bool right);
 // -50 to -1 left, 0 forward, 1 to 50 right
 void turn(int direction);
 
-bool turn_to_goal(Robot* robot, bool right);
+bool facing_goal(Robot* robot, float opponent_x, float opponent_y);
 
 #endif

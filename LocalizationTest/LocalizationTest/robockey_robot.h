@@ -1,5 +1,3 @@
-/* Code by Andrea Frank (2016) */
-
 /* ROBOCKEY ROBOT
 Defines Robot structure and allows interpretation of measurements
 into Robot position and orientation for further motion planning.

@@ -1,13 +1,16 @@
-#include "robockey_robot.h"
+#include "robockey_robot.h
 
 #define RINK_SCALE 37.4358	// after measurement is scaled down to unit size by dividing out centroid
 								// size, multiply by RINK_SCALE to change to cm for comparing to rink
+
+#define PI 3.14159265359
 
 
 /* Interpret the measurement vector returned by mWii and update Robot struct data */
 void interpret(Robot* robot, unsigned int* measurement){
 	int const RINK_SIZE[2] = {230, 120};	// cm
-	float const CENTERED_STARS[4][2] = {{-0.2730, 11.6940}, {-0.2730, -17.3060}, {-10.8360, -0.3230}, {11.3820, 5.9350}}; // cm
+	float const CENTERED_STARS[4][2] = {{-0.2730, -17.3060}, {11.3820, 5.9350}, {-0.2730, 11.6940}, {-10.8360, -0.3230}}; // cm
+	float const CENTERED_RATIOS[4] = {.328537, .243655, .222032, .205776}; // Ratios of distances of each star from center
 	float const STAR_TRANSLATION[2] = {0.2730, 2.8060};	// cm
 
 	// extract x and y data from measurement
@@ -22,6 +25,13 @@ void interpret(Robot* robot, unsigned int* measurement){
 		centroid[0] += mx[i]/4.0;	// in pixels
 		centroid[1] += my[i]/4.0;	// in pixels
 	}
+	centroid[0] += -512.0 + 150.0 - 92.0;
+	centroid[1] += -384.0 - 180.0 + 119.0;
+
+	m_usb_tx_int((int) centroid[0]);
+	m_usb_tx_char(95);
+	m_usb_tx_int((int) centroid[1]);
+	m_usb_tx_char(13);
 
 	// find scale to get to unit size
 	// scale = centroid size (sqrt of sum of distances^2 of points from centroid)
@@ -29,45 +39,109 @@ void interpret(Robot* robot, unsigned int* measurement){
 	for(i=0;i<4;i++){
 		measurement_scale += pow(mx[i]-centroid[0], 2) + pow(my[i]-centroid[1],2);
 	}
-	measurement_scale = pow(measurement_scale/4.0, 0.5);	// divide measurement by this to get unit size
+	measurement_scale = pow(measurement_scale, 0.5);	// divide measurement by this to get unit size
 	
 	// convert centroids to cm
-	//centroid[0] *= RINK_SCALE/measurement_scale;	// now in cm
-	//centroid[1] *= RINK_SCALE/measurement_scale;
+	centroid[0] *= RINK_SIZE[0]/512.0; //RINK_SCALE/measurement_scale;	// now in cm
+	centroid[1] *= RINK_SIZE[1]/384.0; //RINK_SCALE/measurement_scale;
 	
+
+
 	// centroid position = robot position
-	robot->x = centroid[0];
-	robot->y = centroid[1];
+	robot->x = centroid[0] + STAR_TRANSLATION[0];
+	robot->y = centroid[1] + STAR_TRANSLATION[1];
 	
 	/* FIND ROTATION ANGLE */ 
 	// center and scale star points
 	for(i=0;i<4;i++){
-		//mx[i] *= RINK_SCALE/measurement_scale;
-		//my[i] *= RINK_SCALE/measurement_scale;
+		mx[i] *= RINK_SIZE[0]/512.0; //RINK_SCALE/measurement_scale;
+		my[i] *= RINK_SIZE[1]/384.0; //RINK_SCALE/measurement_scale;
 		mx[i] -= centroid[0];
 		my[i] -= centroid[1];
 	}
 	
+	// Find corresponding points based on scale of distance from center over total distance
+	//float rd[4];
+	//int indices[4] = {0, 1, 2, 3};
+	//float total_distance = 0;
+
+	//for (int i = 0; i < 4; i++) {
+		//rd[i] = pow(pow(mx[i], 2) + pow(my[i], 2), 0.5);
+		//total_distance += rd[i];
+	//}
+	//total_distance = pow(total_distance, 0.5);
+
+	//for (int i = 0; i < 4; i++) {
+		//rd[i] /= total_distance;
+	//}
+
+	// Sort ratios and get corresponding indices
+	//for (int i = 0; i < 4; i++) {
+		//for (int j = i + 1; j < 4; j++) {
+			// If greater, swap
+			//if (rd[j] > rd[i]) {
+			//	int temp = rd[i], temp_i = indices[i];
+			//	rd[i] = rd[j];
+			//	indices[i] = indices[j];
+			//	rd[j] = temp;
+			//	indices[j] = temp_i;
+			//}
+		//}
+	//}
+
 	// angle = atan(sum(w*y - z*x) / sum(w*x + z*y))
 	// (x, y) are the centered star points
 	// (w, z) are the centered, scaled measurement points
 	float num = 0;
 	float den = 0;
-	for (i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++) {
 		num += CENTERED_STARS[i][0]*my[i] - CENTERED_STARS[i][1]*mx[i];
 		den += CENTERED_STARS[i][0]*mx[i] + CENTERED_STARS[i][1]*my[i];
 	}
-	robot->o = atan(den/num); // Updated angle in radians
-
-	// angle = acot( sum(v*x - u*y) / sum(u*x + v*y) )
-	//	where (x,y) = centered, scaled measurement points
-	//	and (u,v) = centered star points
-	//float num = 0;
-	//float den = 0;
-	//for(i=0; i<4; i++){
-		//num += CENTERED_STARS[i][1]*mx[i] - CENTERED_STARS[i][0]*my[i];
-		//den += CENTERED_STARS[i][0]*mx[i] - CENTERED_STARS[i][1]*my[i]; // change to +?
-	//}
-	// update angle
-	//robot->o = atan(den/num);
+	robot->o = atan2(den, num); // Updated angle in radians
 }
+
+
+
+
+SORTING STUFF
+
+	/*
+	// Sort indices
+	for (int i = 0; i < 3; i++) {
+		int max = i;
+		for (int j = i; j < 4; j++) {
+			if (rd[j] > rd[max]) {
+				max = j;
+			}
+		}
+		// Swap array[i] and array[min]
+		if (i != max) {
+			// Update array order
+			float temp = rd[i];
+			rd[i] = rd[max];
+			rd[max] = temp;
+			// Update index order
+			int tempIndex = indices[i];
+			indices[i] = indices[max];
+			indices[max] = tempIndex;
+		}
+	}
+
+	int max = 0;
+	int indices[2];
+	for(int i = 0; i < 4; i++){
+		if( rd[i] > max){
+			max = rd[i];
+			indices[0] = i;
+		}
+	}
+
+	max = 0;
+	for(int i = 0; i < 4; i++){
+		if( rd[i] > max && i != indices[0]){
+			max = rd[i];
+			indices[1] = i;
+		}
+	}
+	*/

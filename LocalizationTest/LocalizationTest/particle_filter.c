@@ -9,7 +9,7 @@ Step 1: Make N (often N=1000) virtual robots ("particles") with randomized posit
 			and orientations. Assume all have equal likelihood of being the real
 			position and orientation.
 Step 2: Read measurement from real robot (i.e. where the real robot thinks it is).
-Step 3: Compare measurement with the virtual robots' positions and orientations. Assign
+Step 3: Compare measurement with the virtual robots' position and orientation. Assign
 			each virtual robot a probability based on its Z score with the actual
 			measurement as the mean, and an estimated measurement std dev as sigma.
 Step 4: Draw a new sample of N virtual robots from the old set using sample with
