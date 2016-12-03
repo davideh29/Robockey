@@ -14,5 +14,6 @@ Header file for that has all necessary includes
 #include "m_usb.h"
 #include "puck_find.h"
 #include "motor_control.h"
+#include "robockey_median_filter.h"
 
 #endif

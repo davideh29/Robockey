@@ -14,5 +14,7 @@ m_wii.c
 
 puck_find.c
 
+robockey_median_filter.c
+
 robockey_robot.c
 

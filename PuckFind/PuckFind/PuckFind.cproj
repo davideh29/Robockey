@@ -136,6 +136,9 @@
     <Compile Include="puck_find.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="robockey_median_filter.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="robockey_robot.c">
       <SubType>compile</SubType>
     </Compile>

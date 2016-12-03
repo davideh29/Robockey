@@ -9,6 +9,7 @@ into Robot position and orientation for further motion planning.
 #define robockey_robot_h
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include <math.h>
 
 typedef struct {

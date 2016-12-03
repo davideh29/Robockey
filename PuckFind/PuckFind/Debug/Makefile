@@ -43,6 +43,7 @@ C_SRCS +=  \
 ../m_usb.c \
 ../m_wii.c \
 ../puck_find.c \
+../robockey_median_filter.c \
 ../robockey_robot.c
 
 
@@ -59,6 +60,7 @@ m_bus.o \
 m_usb.o \
 m_wii.o \
 puck_find.o \
+robockey_median_filter.o \
 robockey_robot.o
 
 OBJS_AS_ARGS +=  \
@@ -68,6 +70,7 @@ m_bus.o \
 m_usb.o \
 m_wii.o \
 puck_find.o \
+robockey_median_filter.o \
 robockey_robot.o
 
 C_DEPS +=  \
@@ -77,6 +80,7 @@ m_bus.d \
 m_usb.d \
 m_wii.d \
 puck_find.d \
+robockey_median_filter.d \
 robockey_robot.d
 
 C_DEPS_AS_ARGS +=  \
@@ -86,6 +90,7 @@ m_bus.d \
 m_usb.d \
 m_wii.d \
 puck_find.d \
+robockey_median_filter.d \
 robockey_robot.d
 
 OUTPUT_FILE_PATH +=PuckFind.elf
@@ -102,6 +107,8 @@ LINKER_SCRIPT_DEP+=
 
 
 # AVR32/GNU C Compiler
+
+
 
 
 

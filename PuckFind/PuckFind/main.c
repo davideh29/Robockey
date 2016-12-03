@@ -7,6 +7,7 @@
  #include "robockey.h"
 
 int main(void){
+	m_wait(3000);
 	// System prescaler
 	m_clockdivide(3);
 	// Initialize usb
@@ -16,19 +17,22 @@ int main(void){
 	// Array for phototransistor readings
 	int pt_data[NUM_PTS];
 	
-	
 	// Find puck direction and turn to face it
+	int i = 0;
 	while (1) {
 		read_pts(pt_data); // Get ADC phototransistor pt_datas
-		printADC(pt_data); // Print ADC values to usb
-		// If facing puck, turn on green light
-		if (get_turn(pt_data) == 0) {
-			motor_stop();
-			m_green(ON);
-		} else {
-			turn_to_puck(pt_data); // Turn to face puck
+		if (++i % 40000 == 0) {
+			i = 0;
+			printADC(pt_data); // Print ADC values to usb
 		}
-		m_wait(500);
+		// If facing puck, turn on green lights
+		int direction = get_turn(pt_data);
+		int med_direction = median_filter_directions(direction);
+		if (med_direction == 0) {
+			motor_stop();
+		} else {
+			turn_to_puck(med_direction); // Turn to face puck
+		}
 	}
 	
 	return 0;

@@ -7,7 +7,7 @@
 #include "motor_control.h"
 #include "m_usb.h"
 
-#define NUM_PTS 5
+#define NUM_PTS 9
 
 /**************************************************************************************************
 DESCRIPTION: Read in ADC values from pins F0, F1, F4, F5, F6, F7, D4, D6, & D7
@@ -23,7 +23,7 @@ INPUTS:
 	pt_data[] - pointer to int array of length NUM_PTS
 
 UPDATES:
-	pt_data[] now holds ADC readings
+	pt_data[] now holds ADC readings; order = D4, D6, D7, F0, F1, F4, F5, F6, F7
 	
 OUTPUTS:
 	none
@@ -64,7 +64,7 @@ OUTPUTS:
 	none
 */
 
-void turn_to_puck(int pt_data[]);
+void turn_to_puck(int direction);
 
 
 

@@ -53,17 +53,18 @@ void motor_stop() {
 }
 
 // Turn in place - right if true or left if false
-void turn_in_place(bool right) {
+// Speed is an int between 0 and 255
+void turn_in_place(bool right, int speed) {
 	if (right) {
-		OCR1A = 0xBF;
-		OCR1B = 0xBF;
+		OCR1A = 255 - speed;
+		OCR1B = 255 - speed;
 		set(PORTB, 1);
 		clear(PORTB, 2);
 		clear(PORTB, 3);
 		set(PORTB, 7);
 	} else {
-		OCR1A = 0xBF;
-		OCR1B = 0xBF;
+		OCR1A = 255 - speed;
+		OCR1B = 255 - speed;
 		clear(PORTB, 1);
 		set(PORTB, 2);
 		set(PORTB, 3);

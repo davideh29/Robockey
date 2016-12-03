@@ -3,11 +3,13 @@
 #include "puck_find.h"
 
 // Defines the minimum single PT reading to be considered "active"
-#define PT_ACTIVE_THRESHOLD 10
+#define PT_ACTIVE_THRESHOLD 30
 // Minimum difference between PTs on either side to be considered not straight ahead
-#define PT_DIFFERENCE_THRESHOLD 50
+#define PT_DIFFERENCE_THRESHOLD 30
 // Minimum reading of a single front PT when puck is in possession
-#define PUCK_POSSESSION_THRESHOLD 200
+#define PUCK_POSSESSION_THRESHOLD 950
+// Minimum difference reading of the angled front PT's to not be considered straight ahead
+#define PT_FRONT_DIFFERENCE_THRESHOLD 50
 
 // returns sign of numbers
 #define SIGN_OF(x) (1-(x<0)*2)
@@ -88,11 +90,12 @@ void setMUX(int ADC_num){
 			clear(ADMUX, MUX2);
 		}
 		if(BIT3(ADC_num)==1){
-			set(ADMUX,MUX5);
+			set(ADCSRB, MUX5);
 		} else{
-			clear(ADMUX, MUX5);
+			clear(ADCSRB, MUX5);
 		}
 	} else {
+		m_green(ON);
 		// ya fucked up
 	}
 }
@@ -118,6 +121,7 @@ int readADC(){
 
 /**********************************************************/
 // Read in ADC values from ADC pins
+	// order = D4, D6, D7, F0, F1, F4, F5, F6, F7
 void read_pts(int pt_data[]) {
 	
 	// disable JTAG if not disabled already, so we can use F4-7
@@ -132,13 +136,13 @@ void read_pts(int pt_data[]) {
 	ADC_init(NUM_PTS);
 
 	
-	int adc_nums[] = {0, 1, 4, 5, 6, 7, 8, 9, 10};
+	int adc_nums[] = {8, 9, 10, 0, 1, 4, 5, 6, 7};	// D4, D6, D7, F0, F1, F4, F5, F6, F7
 	// read
 	int i;
 	for(i=0; i<NUM_PTS; i++){
 		setMUX(adc_nums[i]);
 		pt_data[i] = readADC(); 
-		m_wait(1);
+		m_wait(2);
 	}
 	
 }
@@ -178,38 +182,59 @@ int get_turn(int pt_data[]) {
 			}
 			return 1;	// if not ahead, keep turning till you find it
 			
-		// otherwise, youre gonna want to sum the front ones to get front intensity,
+		// otherwise, you're gonna want to sum the front ones to get front intensity,
 		// 	and add left and subtract right to get direction to rotate
 		case 9 : 
 			front = pt_data[0] + pt_data[1] + pt_data[2];
 			num_front_pts = 3;
-			for(i=3; i<6; i++){	// integer divide on purpose
-				direction += pt_data[i];	// add left values
-			}
-			for(i=6; i<9; i++){
-				direction -= pt_data[i];	// subtract right values
-			}
+			direction += pt_data[3];		// left front
+			direction += 2 * pt_data[4];	// left middle
+			direction += 3 * pt_data[5];	// left back
+			direction -= 3 * pt_data[6];	// right back
+			direction -= 2 * pt_data[7];	// right middle
+			direction -= 1 * pt_data[8];	// right front
 			break;
 		default :
 			front = pt_data[0];
 			num_front_pts = 1;
-			for(i=1;i<NUM_PTS/2+1;i++){	// integer divide on purpose
+			for(i=1;i<NUM_PTS/2+1;i++) {	// integer divide on purpose
 				direction += pt_data[i];	// add left values
 			}
-			for(i=NUM_PTS/2+1; i<NUM_PTS; i++){
+			for(i=NUM_PTS/2+1; i<NUM_PTS; i++) {
 				direction -= pt_data[i];	// subtract right values
 			}	
 	}
 	
-	if(abs(direction) > PT_DIFFERENCE_THRESHOLD){	// if one side is significantly brighter than the other 
-		return SIGN_OF(direction);
+	if(abs(direction) > PT_DIFFERENCE_THRESHOLD) {	// if one side is significantly brighter than the other 
+		if (direction < 0) {
+			m_usb_tx_string("Right");
+		} else {
+			m_usb_tx_string("Left");
+		}
+		m_usb_tx_char(13);
+		return 150 * SIGN_OF(direction);
 	}
-	else if( front > PT_ACTIVE_THRESHOLD*num_front_pts){
+	else if( front > PT_ACTIVE_THRESHOLD*num_front_pts) {
+		// subtracts 0 & 2 and see direction
+		int front_direction = pt_data[0] - pt_data[2];
+		if (abs(front_direction) > PT_FRONT_DIFFERENCE_THRESHOLD) {
+			if (front_direction < 0) {
+				m_usb_tx_string("Right Front");
+			} else {
+				m_usb_tx_string("Left Front");
+			}
+			m_usb_tx_char(13);
+			return 40*SIGN_OF(front_direction);
+		}
+		m_usb_tx_string("Front");
+		m_usb_tx_char(13);
 		return 0;
 	}
 	
 	// if not on either side and front doesn't detect it, just spin until you find it
-	return 1;
+	m_usb_tx_string("Back/Too Low");
+	m_usb_tx_char(13);
+	return 150;
 }
 
 /**************************************************************************************************
@@ -258,11 +283,11 @@ OUTPUTS:
 */
 
 
-void turn_to_puck(int pt_data[]) {
-	if (get_turn(pt_data) < 0) {
-		turn_in_place(false);
-	} else if (get_turn(pt_data) > 0) {
-		turn_in_place(true);
+void turn_to_puck(int direction) {
+	if (direction < 0) {
+		turn_in_place(false, direction);
+	} else if (direction > 0) {
+		turn_in_place(true, direction);
 	}
 }
 
@@ -282,41 +307,41 @@ OUTPUTS:
 void printADC(int pt_data[]) {
 
 	m_usb_tx_string("   ---   ");
-	m_usb_tx_string("F0: ");
+	m_usb_tx_string("D4: ");
 	m_usb_tx_int(pt_data[0]);
 	if(NUM_PTS > 1){
 		m_usb_tx_string("   ---   ");
-		m_usb_tx_string("F1: ");
+		m_usb_tx_string("D6: ");
 		m_usb_tx_int(pt_data[1]);
 	} if(NUM_PTS > 2) {
 		m_usb_tx_string("   ---   ");
-		m_usb_tx_string("F4: ");
+		m_usb_tx_string("D7: ");
 		m_usb_tx_int(pt_data[2]);
 	} if(NUM_PTS > 3){
 		m_usb_tx_string("   ---   ");
-		m_usb_tx_string("F5: ");
+		m_usb_tx_string("F0: ");
 		m_usb_tx_int(pt_data[3]);
 	} if(NUM_PTS > 4) {
 		m_usb_tx_string("   ---   ");
-		m_usb_tx_string("F6: ");
+		m_usb_tx_string("F1: ");
 		m_usb_tx_int(pt_data[4]);
 	} if(NUM_PTS > 5){
 		m_usb_tx_string("   ---   ");
-		m_usb_tx_string("F7: ");
+		m_usb_tx_string("F4: ");
 		m_usb_tx_int(pt_data[5]);
 	} if(NUM_PTS > 6) {
 		m_usb_tx_string("   ---   ");
-		m_usb_tx_string("D4: ");
+		m_usb_tx_string("F5: ");
 		m_usb_tx_int(pt_data[6]);
 	} if(NUM_PTS > 7) {
 		m_usb_tx_string("   ---   ");
-		m_usb_tx_string("D6: ");
+		m_usb_tx_string("F6: ");
 		m_usb_tx_int(pt_data[7]);
 	} if(NUM_PTS > 8) {
 		m_usb_tx_string("   ---   ");
-		m_usb_tx_string("D8: ");
+		m_usb_tx_string("F7: ");
 		m_usb_tx_int(pt_data[8]);
 	}
 	m_usb_tx_string("   ---   ");
-	m_usb_tx_char(13);
+	//m_usb_tx_char(13);
 }
