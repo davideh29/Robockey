@@ -16,4 +16,6 @@ Header file for that has all necessary includes
 #include "motor_control.h"
 #include "robockey_median_filter.h"
 
+Robot robot;
+
 #endif

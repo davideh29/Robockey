@@ -3,13 +3,15 @@
 #include "puck_find.h"
 
 // Defines the minimum single PT reading to be considered "active"
-#define PT_ACTIVE_THRESHOLD 30
+// Defines David to be a bitch
+//heh got em
+#define PT_ACTIVE_THRESHOLD 20
 // Minimum difference between PTs on either side to be considered not straight ahead
-#define PT_DIFFERENCE_THRESHOLD 30
-// Minimum reading of a single front PT when puck is in possession
+#define PT_DIFFERENCE_THRESHOLD 6
+// Minimum threshold PI reading for the front PTs to be considered in possession of puck
 #define PUCK_POSSESSION_THRESHOLD 950
-// Minimum difference reading of the angled front PT's to not be considered straight ahead
-#define PT_FRONT_DIFFERENCE_THRESHOLD 50
+// Defines how fast the speed scales around the robot when turning towards IR light
+#define SPEED_FACTOR .25
 
 // returns sign of numbers
 #define SIGN_OF(x) (1-(x<0)*2)
@@ -206,35 +208,18 @@ int get_turn(int pt_data[]) {
 	}
 	
 	if(abs(direction) > PT_DIFFERENCE_THRESHOLD) {	// if one side is significantly brighter than the other 
-		if (direction < 0) {
-			m_usb_tx_string("Right");
-		} else {
-			m_usb_tx_string("Left");
-		}
-		m_usb_tx_char(13);
-		return 150 * SIGN_OF(direction);
+		// Scale weighted speed by SPEED_FACTOR
+		direction *= SPEED_FACTOR;
+		if (direction > 255) direction = 255;
+		return direction;
 	}
-	else if( front > PT_ACTIVE_THRESHOLD*num_front_pts) {
-		// subtracts 0 & 2 and see direction
-		int front_direction = pt_data[0] - pt_data[2];
-		if (abs(front_direction) > PT_FRONT_DIFFERENCE_THRESHOLD) {
-			if (front_direction < 0) {
-				m_usb_tx_string("Right Front");
-			} else {
-				m_usb_tx_string("Left Front");
-			}
-			m_usb_tx_char(13);
-			return 40*SIGN_OF(front_direction);
-		}
-		m_usb_tx_string("Front");
-		m_usb_tx_char(13);
+	else if( front > PT_ACTIVE_THRESHOLD * num_front_pts) {
 		return 0;
 	}
-	
 	// if not on either side and front doesn't detect it, just spin until you find it
 	m_usb_tx_string("Back/Too Low");
 	m_usb_tx_char(13);
-	return 150;
+	return 100;
 }
 
 /**************************************************************************************************
