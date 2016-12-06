@@ -14,36 +14,47 @@ int main(void){
 	m_usb_init();
 	// Initialize motor
 	motor_init();
-	// Array for phototransistor readings
-	int pt_data[NUM_PTS];
+	//Initialize m_wii
+	char wiiOpen = m_wii_open();
+	while(!wiiOpen) {
+		m_red(ON);
+		//return 0;
+	}
+
 	
-	// Find puck direction and turn to face it
-	int i = 0;
+	Robot robot;	// Robot variable
+	init_robot(&robot, 1);
+
+	///// FOR TESTING WITHOUT PLAY COMMAND //////////////////
+	// init_rf(1);
+	active = true;
+	unsigned int star_array[12];
+	/////////////////////////////////////////////////////////
+	int k = 0;
 	while (1) {
-		read_pts(pt_data); // Get ADC phototransistor pt_datas
-		// If facing puck, turn on green lights
-		int direction = get_turn(pt_data);
-		if (++i % 40 == 0) {
-			i = 0;
-			printADC(pt_data); // Print ADC values to usb
-			if (direction < 0) {
-				m_usb_tx_string("Right");
-			} else if (direction > 0) {
-				m_usb_tx_string("Left");
-			} else {
-				m_usb_tx_string("Front");
-			}
-			m_usb_tx_char(13);
+		if (k++ >= 40) {
+			k = 0;
+			m_wii_read(star_array);
+			interpret(&robot, star_array);
 		}
-		int med_direction = median_filter_directions(direction);
-		if (med_direction == 0) {
-			motor_stop();
-		} else {
-			turn_to_puck(med_direction); // Turn to face puck
+		// Check if robot is active
+		if(active){
+			// move to puck
+			if(step_to_puck()){
+				motor_stop();
+				m_wait(2000);
+				// if step_to_puck returns true, it means you have the puck!
+				if(step_to_goal(&robot)) {
+					// if step_to_goal returns true, it means you scored!
+					m_green(ON);
+				}
+			}
 		}
 	}
 	
 	return 0;
 }
+
+
 
 

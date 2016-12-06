@@ -127,6 +127,9 @@
     <Compile Include="m_bus.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="m_rf.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="m_usb.c">
       <SubType>compile</SubType>
     </Compile>
@@ -140,6 +143,12 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="robockey_robot.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="score.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="wireless_comm.c">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>

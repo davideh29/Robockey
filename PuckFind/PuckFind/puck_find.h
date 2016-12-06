@@ -3,11 +3,23 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "m_general.h"
-#include "motor_control.h"
-#include "m_usb.h"
+#include "robockey.h"
 
 #define NUM_PTS 9
+
+/**************************************************************************************************
+DESCRIPTION: Calculates how to get to puck (either turn in place or drive straight) and takes one
+				step in that task. Also determines if the puck is in posession.
+
+INPUTS:
+	none
+
+OUTPUTS:
+	0 if puck is not in possession
+	1 if puck is in possession
+*/
+
+bool step_to_puck();
 
 /**************************************************************************************************
 DESCRIPTION: Read in ADC values from pins F0, F1, F4, F5, F6, F7, D4, D6, & D7

@@ -40,11 +40,14 @@ C_SRCS +=  \
 ../main.c \
 ../motor_control.c \
 ../m_bus.c \
+../m_rf.c \
 ../m_usb.c \
 ../m_wii.c \
 ../puck_find.c \
 ../robockey_median_filter.c \
-../robockey_robot.c
+../robockey_robot.c \
+../score.c \
+../wireless_comm.c
 
 
 PREPROCESSING_SRCS += 
@@ -57,41 +60,53 @@ OBJS +=  \
 main.o \
 motor_control.o \
 m_bus.o \
+m_rf.o \
 m_usb.o \
 m_wii.o \
 puck_find.o \
 robockey_median_filter.o \
-robockey_robot.o
+robockey_robot.o \
+score.o \
+wireless_comm.o
 
 OBJS_AS_ARGS +=  \
 main.o \
 motor_control.o \
 m_bus.o \
+m_rf.o \
 m_usb.o \
 m_wii.o \
 puck_find.o \
 robockey_median_filter.o \
-robockey_robot.o
+robockey_robot.o \
+score.o \
+wireless_comm.o
 
 C_DEPS +=  \
 main.d \
 motor_control.d \
 m_bus.d \
+m_rf.d \
 m_usb.d \
 m_wii.d \
 puck_find.d \
 robockey_median_filter.d \
-robockey_robot.d
+robockey_robot.d \
+score.d \
+wireless_comm.d
 
 C_DEPS_AS_ARGS +=  \
 main.d \
 motor_control.d \
 m_bus.d \
+m_rf.d \
 m_usb.d \
 m_wii.d \
 puck_find.d \
 robockey_median_filter.d \
-robockey_robot.d
+robockey_robot.d \
+score.d \
+wireless_comm.d
 
 OUTPUT_FILE_PATH +=PuckFind.elf
 
@@ -107,6 +122,12 @@ LINKER_SCRIPT_DEP+=
 
 
 # AVR32/GNU C Compiler
+
+
+
+
+
+
 
 
 

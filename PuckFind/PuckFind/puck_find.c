@@ -3,18 +3,12 @@
 #include "puck_find.h"
 
 // Defines the minimum single PT reading to be considered "active"
-// Defines David to be a bitch
-//heh got em
-#define PT_ACTIVE_THRESHOLD 20
+#define PT_ACTIVE_THRESHOLD 15
 // Minimum difference between PTs on either side to be considered not straight ahead
-#define PT_DIFFERENCE_THRESHOLD 6
-// Minimum threshold PI reading for the front PTs to be considered in possession of puck
-#define PUCK_POSSESSION_THRESHOLD 950
-// Defines how fast the speed scales around the robot when turning towards IR light
-#define SPEED_FACTOR .25
+#define PT_DIFFERENCE_THRESHOLD 20
+// Minimum threshold reading for the average front PT to be considered in possession of puck
+#define PUCK_POSSESSION_THRESHOLD 100
 
-// returns sign of numbers
-#define SIGN_OF(x) (1-(x<0)*2)
 
 // returns the designated bit of a number
 #define BIT0(integer) (integer & 0x01)
@@ -23,6 +17,7 @@
 #define BIT3(integer) ((integer & 0x08)>>3)
 
 bool jtag_enabled = true;
+int zzz = 0;
 
 /**************************************************************************************************
 DESCRIPTION: Read in ADC values from pins F0, F1, F4, F5, F6, F7, D4, D6, & D7
@@ -172,9 +167,9 @@ OUTPUTS:
 
 int get_turn(int pt_data[]) {
 	int direction = 0;
-	int front;
+	//int front;
 	int i;
-	int num_front_pts;
+	//int num_front_pts;
 	switch(NUM_PTS) {
 		case 1 :
 		// if there's only one PT, you just want to know if you sense it ahead
@@ -187,8 +182,8 @@ int get_turn(int pt_data[]) {
 		// otherwise, you're gonna want to sum the front ones to get front intensity,
 		// 	and add left and subtract right to get direction to rotate
 		case 9 : 
-			front = pt_data[0] + pt_data[1] + pt_data[2];
-			num_front_pts = 3;
+			//front = pt_data[1] + pt_data[2]; // REMOVED D4 pt_data[0]
+			//num_front_pts = 2;
 			direction += pt_data[3];		// left front
 			direction += 2 * pt_data[4];	// left middle
 			direction += 3 * pt_data[5];	// left back
@@ -197,8 +192,8 @@ int get_turn(int pt_data[]) {
 			direction -= 1 * pt_data[8];	// right front
 			break;
 		default :
-			front = pt_data[0];
-			num_front_pts = 1;
+			//front = pt_data[0];
+			//num_front_pts = 1;
 			for(i=1;i<NUM_PTS/2+1;i++) {	// integer divide on purpose
 				direction += pt_data[i];	// add left values
 			}
@@ -208,18 +203,19 @@ int get_turn(int pt_data[]) {
 	}
 	
 	if(abs(direction) > PT_DIFFERENCE_THRESHOLD) {	// if one side is significantly brighter than the other 
-		// Scale weighted speed by SPEED_FACTOR
-		direction *= SPEED_FACTOR;
-		if (direction > 255) direction = 255;
-		return direction;
+		if (direction < 0) {
+			return -1;
+		} else {
+			return 1;
+		}
 	}
-	else if( front > PT_ACTIVE_THRESHOLD * num_front_pts) {
+	else if(pt_data[1] > PT_ACTIVE_THRESHOLD || pt_data[2] > PT_ACTIVE_THRESHOLD) { // ignoring D4 cause it isnt working rn
 		return 0;
 	}
 	// if not on either side and front doesn't detect it, just spin until you find it
-	m_usb_tx_string("Back/Too Low");
-	m_usb_tx_char(13);
-	return 100;
+	//m_usb_tx_string("Back/Too Low");
+	//m_usb_tx_char(13);
+	return SIGN_OF(direction);
 }
 
 /**************************************************************************************************
@@ -248,7 +244,7 @@ bool has_puck(int pt_data[]){
 	}
 	
 	// if the front intensity is great enough, puck is in possession
-	if( front > PUCK_POSSESSION_THRESHOLD*num_front_pts ){
+	if( front/num_front_pts > PUCK_POSSESSION_THRESHOLD ){
 		return true;
 	}
 	
@@ -270,7 +266,7 @@ OUTPUTS:
 
 void turn_to_puck(int direction) {
 	if (direction < 0) {
-		turn_in_place(false, direction);
+		turn_in_place(false, abs(direction));
 	} else if (direction > 0) {
 		turn_in_place(true, direction);
 	}
@@ -329,4 +325,50 @@ void printADC(int pt_data[]) {
 	}
 	m_usb_tx_string("   ---   ");
 	//m_usb_tx_char(13);
+}
+
+/**************************************************************************************************
+DESCRIPTION: Calculates how to get to puck (either turn in place or drive straight) and takes one
+				step in that task. Also determines if the puck is in posession.
+
+INPUTS:
+	none
+
+OUTPUTS:
+	0 if puck is not in possession
+	1 if puck is in possession
+*/
+
+bool step_to_puck() {
+
+	// Array for phototransistor readings
+	int pt_data[NUM_PTS];
+
+	// Get ADC phototransistor pt_data
+	read_pts(pt_data); 
+
+	// calculate direction and filter out noise
+	int direction = filter_directions(get_turn(pt_data));
+	/*if (++zzz % 40 == 0) {
+		//printADC(pt_data);
+		zzz = 0;
+		if (direction == 0) {
+			m_usb_tx_string("Front");
+		} else if (direction < 0) {
+			m_usb_tx_string("Right");
+		} else {
+			m_usb_tx_string("Left");
+		}
+		m_usb_tx_char(13);
+	}*/
+	if (direction == 0) {
+		turn(0);	// drive forward
+		if(has_puck(pt_data)){
+			m_red(ON);
+			return 1;
+		}
+	} else {
+		turn_to_puck(direction * TURN_SPEED_FACTOR); // Turn to face puck
+	}
+	return 0;
 }

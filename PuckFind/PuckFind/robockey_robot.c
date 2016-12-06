@@ -18,35 +18,76 @@ Step 7: Calculate rotation angle using inverse trig.
 
 #include "robockey_robot.h"
 #include "float.h"
+#include "m_usb.h"
 
 #define PI 3.14159265
-#define CENTER_OFFSET_X -125
-#define CENTER_OFFSET_Y 30
+#define CENTER_OFFSET_X -67
+#define CENTER_OFFSET_Y 77
 
 int const RINK_SIZE[2] = {230, 120};	// cm
 float const CENTERED_STARS[4][2] = {{-0.2730, 11.6940}, {-0.2730, -17.3060}, {-10.8360, -0.3230}, {11.3820, 5.9350}}; // cm
 float const STAR_TRANSLATION[2] = {0.2730, 2.8060};	// cm
+
+// Prints mWii data
+void print_data(float* mx, float* my, float ox, float oy, int top_index, int bottom_index, Robot* robot) {
+	float opponent_x = (96.0 - CENTER_OFFSET_X), opponent_y = (364.0 - CENTER_OFFSET_Y);
+	// Print four points
+	m_usb_tx_string(" --- ");
+	for (int i = 0; i < 4; i++) {
+		m_usb_tx_string("( ");
+		m_usb_tx_int((int) mx[i]);
+		m_usb_tx_string(", ");
+		m_usb_tx_int((int) my[i]);
+		m_usb_tx_string(" )");
+		m_usb_tx_string("   ---   ");
+	}
+	// Print calculated translation and rotation
+	m_usb_tx_char(13);
+	m_usb_tx_string("Top Index: ");
+	m_usb_tx_int(top_index);
+	m_usb_tx_string("    ------    ");
+	m_usb_tx_string("Bottom Index: ");
+	m_usb_tx_int(bottom_index);
+	m_usb_tx_char(13);
+	m_usb_tx_string("   ---   Translation: ");
+	m_usb_tx_string("( ");
+	m_usb_tx_int((int) ox);
+	m_usb_tx_string(", ");
+	m_usb_tx_int((int) oy);
+	m_usb_tx_string(" )");
+	m_usb_tx_string("   ---   New frame: ");
+	m_usb_tx_string("( ");
+	m_usb_tx_int((int) robot->x);
+	m_usb_tx_string(", ");
+	m_usb_tx_int((int) robot->y);
+	m_usb_tx_string(" )");
+	m_usb_tx_string("   ---   Theta: ");
+	m_usb_tx_int((int) (robot->o * 180.0) / PI);	// print angle in degrees
+	m_usb_tx_string("   ---   Rho: ");
+	m_usb_tx_int((int) ((180.0 * (PI - atan2f(-(robot->y - opponent_y), robot->x - opponent_x))) / PI));
+	m_usb_tx_char(13);
+	m_usb_tx_char(13);
+}
 
 void init_robot(Robot* robot, int robot_type){
 	robot->x = 0;
 	robot->y = 0;
 	robot->o = 0;
 	robot->has_puck = false;
-	robot->type = robot_type;
 	// read in switch position to get color
 	active = false;
 }
 
-void set_color(Robot* robot, int robot_color){
-	robot->color = robot_color;
+void set_color(int robot_color){
+	color = robot_color;
 }
 
-void play(Robot* robot){
-	robot->active = true;
+void play(){
+	active = true;
 }
 
-void pause(Robot* robot){
-	robot->active = false;
+void pause(){
+	active = false;
 }
 
 /* Interpret the measurement vector returned by mWii and update Robot struct data */
@@ -116,11 +157,8 @@ void interpret(Robot* robot, unsigned int* measurement){
 		if (i != indices[0] && i != indices[1]) {
 			// Get distance to first max distance point
 			float distance = powf(powf(mx[indices[0]] - mx[i], 2.0) + powf(my[indices[0]] - my[i], 2.0), 0.5);
-			// If distance is lower than min distance, set as the new top index
-			if (distance < min_distance) {
-				top_index = indices[0];
-				min_distance = distance;
-			}
+			min_distance = distance;
+
 			// Get distance to other max distance point
 			distance = powf(powf(mx[indices[1]] - mx[i], 2.0) + powf(my[indices[1]] - my[i], 2.0), 0.5);
 			// If distance is lower than min distance, set as the new top index
@@ -164,6 +202,8 @@ void interpret(Robot* robot, unsigned int* measurement){
 	robot->y = -translation_y - CENTER_OFFSET_Y;
 	robot->o = -robot->o;
 
+	// Print data
+	print_data(mWii_x, mWii_y, ox, oy, top_index, bottom_index, robot);
 }
 
 

@@ -86,7 +86,6 @@ char m_wii_read(unsigned int* blob_data)
 {
 	int i;
 	unsigned char temp[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-	
 	// prepare for reading
 	if(!start_write(MWIITWIADDR)){return 0;}
 	if(!send_byte(0x36)){return 0;}
