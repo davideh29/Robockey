@@ -22,7 +22,7 @@ typedef struct {
 volatile enum {RED, BLUE} color;	// assigned by switch
 volatile bool active; // denotes if a game is active or paused
 
-void init_robot(Robot* robot, int robot_type);
+void init_robot(Robot* robot);
 
 void set_color(int robot_color);
 

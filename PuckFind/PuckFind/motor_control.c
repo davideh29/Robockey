@@ -93,8 +93,8 @@ void turn(int direction) {
 
 // Turn to face opponent's goal
 bool facing_goal(Robot* robot, float opponent_x, float opponent_y) {
-	float opponent_angle = (PI - atan2f(-(robot->y - opponent_y), robot->x - opponent_x));
-	float error = PI / 45.0;
+	float opponent_angle = atan2f((opponent_y - robot->y), opponent_x - robot->x);
+	float error = PI / 18.0;
 	float low_bound = opponent_angle - error;
 	float high_bound = opponent_angle + error;
 	/*

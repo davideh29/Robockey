@@ -5,9 +5,9 @@
 // Defines the minimum single PT reading to be considered "active"
 #define PT_ACTIVE_THRESHOLD 15
 // Minimum difference between PTs on either side to be considered not straight ahead
-#define PT_DIFFERENCE_THRESHOLD 20
+#define PT_DIFFERENCE_THRESHOLD 40
 // Minimum threshold reading for the average front PT to be considered in possession of puck
-#define PUCK_POSSESSION_THRESHOLD 100
+#define PUCK_POSSESSION_THRESHOLD 80
 
 
 // returns the designated bit of a number
@@ -349,18 +349,18 @@ bool step_to_puck() {
 
 	// calculate direction and filter out noise
 	int direction = filter_directions(get_turn(pt_data));
-	/*if (++zzz % 40 == 0) {
+	if (++zzz % 40 == 0) {
 		//printADC(pt_data);
 		zzz = 0;
-		if (direction == 0) {
+		/*if (direction == 0) {
 			m_usb_tx_string("Front");
 		} else if (direction < 0) {
 			m_usb_tx_string("Right");
 		} else {
 			m_usb_tx_string("Left");
-		}
+		}*/
 		m_usb_tx_char(13);
-	}*/
+	}
 	if (direction == 0) {
 		turn(0);	// drive forward
 		if(has_puck(pt_data)){

@@ -4,8 +4,8 @@
 #include "robockey.h"
 #include <stdbool.h>
 
-#define OPPONENT_X 42
-#define OPPONENT_Y 317
+#define OPPONENT_X 35
+#define OPPONENT_Y 315
 
 
 /**************************************************************************************************

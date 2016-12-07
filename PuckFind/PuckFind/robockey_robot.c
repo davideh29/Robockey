@@ -21,8 +21,8 @@ Step 7: Calculate rotation angle using inverse trig.
 #include "m_usb.h"
 
 #define PI 3.14159265
-#define CENTER_OFFSET_X -67
-#define CENTER_OFFSET_Y 77
+#define CENTER_OFFSET_X -25
+#define CENTER_OFFSET_Y -1
 
 int const RINK_SIZE[2] = {230, 120};	// cm
 float const CENTERED_STARS[4][2] = {{-0.2730, 11.6940}, {-0.2730, -17.3060}, {-10.8360, -0.3230}, {11.3820, 5.9350}}; // cm
@@ -64,12 +64,12 @@ void print_data(float* mx, float* my, float ox, float oy, int top_index, int bot
 	m_usb_tx_string("   ---   Theta: ");
 	m_usb_tx_int((int) (robot->o * 180.0) / PI);	// print angle in degrees
 	m_usb_tx_string("   ---   Rho: ");
-	m_usb_tx_int((int) ((180.0 * (PI - atan2f(-(robot->y - opponent_y), robot->x - opponent_x))) / PI));
+	m_usb_tx_int((int) ((180.0 * atan2f((opponent_y - robot->y), opponent_x - robot->x)) / PI));
 	m_usb_tx_char(13);
 	m_usb_tx_char(13);
 }
 
-void init_robot(Robot* robot, int robot_type){
+void init_robot(Robot* robot){
 	robot->x = 0;
 	robot->y = 0;
 	robot->o = 0;

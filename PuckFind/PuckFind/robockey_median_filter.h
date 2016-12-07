@@ -15,7 +15,7 @@ position and orientation to reduce noise.
 #include "robockey.h"
 
 #define NUM_SAVED_DATA 7	// change this if you want
-#define NUM_SAVED_DIRECTIONS 7 // DONT change this this is permanent
+#define NUM_SAVED_DIRECTIONS 13 // DONT change this this is permanent
 
 // Takes in an empty (or not, but it will be overwritten) median_robot
 // and edits median_robot struct fields to be proper median values.
