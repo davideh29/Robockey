@@ -61,24 +61,32 @@ int main(void){
 	while (1) {
 		if (k++ >= 100) {
 			k = 0;
+			/*
 			if (m_wii_read(star_array)) {
 				m_green(TOGGLE);
 			}
-			//m_wii_read(star_array);
+			m_green(TOGGLE);
 			m_red(TOGGLE);
 			interpret(&robot, star_array);
+			*/
 		}
 		// Check if robot is active
 		if(active){
+			// TO TEST DRIVING TO GOAL
+			if (step_to_goal(&robot)) {
+				motor_stop();
+				m_green(ON);
+				while (1) {}
+			}
 			// move to puck 
-			//if(step_to_puck()){
-				//turn(0);
+			/*if(step_to_puck()){
+				turn(0);
 				// if step_to_puck returns true, it means you have the puck!
 				if(step_to_goal(&robot)) {
 					// if step_to_goal returns true, it means you scored!
 					m_green(ON);
 				}
-			//}
+			}*/
 		}
 	}
 	

@@ -72,7 +72,7 @@ void turn_in_place(bool right, int speed) {
 	}
 }
 
-// -50 to -1 left, 0 forward, 1 to 50 right
+// -255 to -1 left, 0 forward, 1 to 255 right
 // Absolute value of input determines how "sharp" the turn is
 void turn(int direction) {
 	clear(PORTB, 1);
@@ -91,8 +91,27 @@ void turn(int direction) {
 	}
 }
 
+void turn_pool(int direction) {
+	clear(PORTB, 1);
+	set(PORTB, 2);
+	clear(PORTB, 3);
+	set(PORTB, 7);
+	if (direction == 0) {
+		OCR1A = 255;
+		OCR1B = 255;
+		} else if (direction > 0) {
+		OCR1A = 0x00;
+		OCR1B = 255 - direction;
+		} else {
+		OCR1A = 255 - direction;
+		OCR1B = 0x00;
+	}
+}
+
 // Turn to face opponent's goal
 bool facing_goal(Robot* robot, float opponent_x, float opponent_y) {
+	if (opponent_x == robot->x) robot->x += 1;
+	if (opponent_y == robot->y) robot->y += 1;
 	float opponent_angle = atan2f((opponent_y - robot->y), opponent_x - robot->x);
 	float error = PI / 18.0;
 	float low_bound = opponent_angle - error;
@@ -112,4 +131,13 @@ bool facing_goal(Robot* robot, float opponent_x, float opponent_y) {
 	return (robot->o > low_bound && robot->o < high_bound);
 }
 
-void drive_to_goal();
+int drive_to_goal(Robot* robot, float opponent_x, float opponent_y) {
+	if (opponent_x == robot->x) robot->x += 1;
+	if (opponent_y == robot->y) robot->y += 1;
+	float opponent_angle = atan2f((opponent_y - robot->y), opponent_x - robot->x);
+	float error = PI / 30.0;
+	float low_bound = opponent_angle - error;
+	float high_bound = opponent_angle + error;
+	int turn_speed = abs(robot->o - opponent_angle) * 255.0 / 180.0;
+	return turn_speed;
+}

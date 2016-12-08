@@ -19,10 +19,11 @@ Step 7: Calculate rotation angle using inverse trig.
 #include "robockey_robot.h"
 #include "float.h"
 #include "m_usb.h"
+#include "score.h"
 
 #define PI 3.14159265
-#define CENTER_OFFSET_X -25
-#define CENTER_OFFSET_Y -1
+#define CENTER_OFFSET_X -52
+#define CENTER_OFFSET_Y 211
 
 int const RINK_SIZE[2] = {230, 120};	// cm
 float const CENTERED_STARS[4][2] = {{-0.2730, 11.6940}, {-0.2730, -17.3060}, {-10.8360, -0.3230}, {11.3820, 5.9350}}; // cm
@@ -30,7 +31,8 @@ float const STAR_TRANSLATION[2] = {0.2730, 2.8060};	// cm
 
 // Prints mWii data
 void print_data(float* mx, float* my, float ox, float oy, int top_index, int bottom_index, Robot* robot) {
-	float opponent_x = (96.0 - CENTER_OFFSET_X), opponent_y = (364.0 - CENTER_OFFSET_Y);
+	if (OPPONENT_X == robot->x) robot->x += 1;
+	if (OPPONENT_Y == robot->y) robot->y += 1;
 	// Print four points
 	m_usb_tx_string(" --- ");
 	for (int i = 0; i < 4; i++) {
@@ -64,7 +66,7 @@ void print_data(float* mx, float* my, float ox, float oy, int top_index, int bot
 	m_usb_tx_string("   ---   Theta: ");
 	m_usb_tx_int((int) (robot->o * 180.0) / PI);	// print angle in degrees
 	m_usb_tx_string("   ---   Rho: ");
-	m_usb_tx_int((int) ((180.0 * atan2f((opponent_y - robot->y), opponent_x - robot->x)) / PI));
+	m_usb_tx_int((int) ((180.0 * atan2f((OPPONENT_Y - robot->y), OPPONENT_X - robot->x)) / PI));
 	m_usb_tx_char(13);
 	m_usb_tx_char(13);
 }
